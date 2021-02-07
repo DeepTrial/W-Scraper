@@ -1,6 +1,8 @@
 from weibo_scraper import get_weibo_tweets_by_name
 import datetime,re
 from .engine import download_images,download_videos
+import pandas as pd
+import os
 
 def parse_time(time_str):
 
@@ -36,6 +38,7 @@ def scrap(
 
     images=[]
     videos=[]
+    data=[]
 
     start_date=datetime.datetime.strptime(start_date, '%Y-%m-%d')# + datetime.timedelta(days=interval)
     end_date=datetime.datetime.strptime(end_date, '%Y-%m-%d')
@@ -47,6 +50,7 @@ def scrap(
     for tweet in get_weibo_tweets_by_name(name=account_name, pages=None):
         current_time=tweet['mblog']['created_at']
         current_date=parse_time(current_time)
+
         if current_date>=start_date and current_date<=end_date:
             text=tweet['mblog']['text']
             img_url_list=tweet['mblog']['pic_ids']
@@ -55,16 +59,23 @@ def scrap(
                 for url in img_url_list:
                     images.append((current_date.strftime("%Y-%m-%d %H:%M:%S").split(" ")[0],img_prefix+"large/"+url+".jpg"))
             if r"微博视频" in text:
-
                 video_url=tweet['mblog']["page_info"]["urls"]['mp4_ld_mp4']
                 videos.append((current_date.strftime("%Y-%m-%d %H:%M:%S").split(" ")[0],video_url))
-        # elif current_date<=start_date:
-        #     break
-            print(filter_text(text))
-    print("\r[INFO] 图片下载中")
+            data.append((account_name,current_time,filter_text(text)))
+
+        elif 'title' in tweet['mblog'].keys() and '置顶' in tweet['mblog']['title']['text']:
+            continue
+        elif current_date<=start_date:
+            break
+    data = pd.DataFrame(data, columns=['UserName', 'Timestamp', 'Text'])
+    if not os.path.exists("./csv_log/" ):
+        os.makedirs("./csv_log/" )
+    data.to_csv("./csv_log/"+account_name+"_"+start_date.strftime("%Y-%m-%d %H:%M:%S").split(" ")[0]+"_"+end_date.strftime("%Y-%m-%d %H:%M:%S").split(" ")[0]+".csv", encoding="utf-8-sig",index=None)
+
+    print("\r[INFO] 图片下载中",end="")
     if save_images:
         download_images(account_name,"./media/",images)
 
-    print("\r[INFO] 视频下载中")
+    print("\r[INFO] 视频下载中",end="")
     if save_videos:
         download_videos(account_name,"./media/",videos)

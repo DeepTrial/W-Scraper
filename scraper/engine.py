@@ -3,7 +3,8 @@ import scraper.video as video
 import requests
 import urllib
 from colorama import init, Fore, Style
-
+from time import sleep
+import random
 init()
 
 def download_videos(username,save_dir,url_list):
@@ -23,6 +24,7 @@ def download_videos(username,save_dir,url_list):
         except:
             print('\r[' + Fore.YELLOW + 'WARNING' + Style.RESET_ALL + '] ' +  url + " video download failed")
 
+        sleep(random.randint(0, 2))
 
 
 def download_images(username,save_dir,url_list):
@@ -41,3 +43,5 @@ def download_images(username,save_dir,url_list):
                     f.write(imgres.content)
             except:
                 print('\r[' + Fore.YELLOW + 'WARNING' + Style.RESET_ALL + '] ' + url + " image download error")
+
+        sleep(random.randint(0,2))
